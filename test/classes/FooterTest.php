@@ -6,6 +6,7 @@ namespace PhpMyAdmin\Tests;
 
 use PhpMyAdmin\ErrorHandler;
 use PhpMyAdmin\Footer;
+
 use function json_encode;
 
 class FooterTest extends AbstractTestCase
@@ -33,7 +34,7 @@ class FooterTest extends AbstractTestCase
         $GLOBALS['db'] = '';
         $GLOBALS['table'] = '';
         $GLOBALS['text_dir'] = 'ltr';
-        $GLOBALS['PMA_Config']->enableBc();
+        $GLOBALS['config']->enableBc();
         $GLOBALS['cfg']['Server']['DisableIS'] = false;
         $GLOBALS['cfg']['Server']['verbose'] = 'verbose host';
         $GLOBALS['server'] = '1';
@@ -42,7 +43,7 @@ class FooterTest extends AbstractTestCase
         $this->object = new Footer();
         unset($GLOBALS['error_message']);
         unset($GLOBALS['sql_query']);
-        $GLOBALS['error_handler'] = new ErrorHandler();
+        $GLOBALS['errorHandler'] = new ErrorHandler();
         unset($_POST);
     }
 

@@ -13,6 +13,7 @@ use PhpMyAdmin\Transformations;
 use PhpMyAdmin\Types;
 use PhpMyAdmin\Url;
 use stdClass;
+
 use function json_encode;
 
 class NormalizationTest extends AbstractTestCase
@@ -26,7 +27,6 @@ class NormalizationTest extends AbstractTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        parent::defineVersionConstants();
         $GLOBALS['cfg']['LimitChars'] = 50;
         $GLOBALS['cfg']['ServerDefault'] = 'PMA_server';
         $GLOBALS['cfg']['ShowHint'] = true;

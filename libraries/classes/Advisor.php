@@ -7,6 +7,7 @@ namespace PhpMyAdmin;
 use PhpMyAdmin\Server\SysInfo\SysInfo;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Throwable;
+
 use function array_merge;
 use function htmlspecialchars;
 use function implode;
@@ -342,10 +343,17 @@ class Advisor
             },
             $rule['recommendation']
         );
+        $rule['issue'] = preg_replace_callback(
+            '/\{([a-z_0-9]+)\}/Ui',
+            function (array $matches) {
+                return $this->replaceVariable($matches);
+            },
+            $rule['issue']
+        );
 
         // Replaces external Links with Core::linkURL() generated links
         $rule['recommendation'] = preg_replace_callback(
-            '#href=("|\')(https?://[^\1]+)\1#i',
+            '#href=("|\')(https?://[^"\']+)\1#i',
             function (array $matches) {
                 return $this->replaceLinkURL($matches);
             },

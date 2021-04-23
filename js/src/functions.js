@@ -5,7 +5,6 @@
 /* global mysqlDocBuiltin, mysqlDocKeyword */ // js/doclinks.js
 /* global Indexes */ // js/indexes.js
 /* global firstDayOfCalendar, maxInputVars, mysqlDocTemplate, themeImagePath */ // templates/javascript/variables.twig
-/* global MicroHistory */ // js/microhistory.js
 /* global sprintf */ // js/vendor/sprintf.js
 /* global zxcvbn */ // js/vendor/zxcvbn.js
 
@@ -21,12 +20,12 @@ var Functions = {};
 var sqlBoxLocked = false;
 
 /**
- * @var {array} holds elements which content should only selected once
+ * @var {array}, holds elements which content should only selected once
  */
 var onlyOnceElements = [];
 
 /**
- * @var {int} ajaxMessageCount Number of AJAX messages shown since page load
+ * @var {number} ajaxMessageCount Number of AJAX messages shown since page load
  */
 var ajaxMessageCount = 0;
 
@@ -107,6 +106,8 @@ $.ajaxPrefilter(function (options, originalOptions) {
  * Adds a date/time picker to an element
  *
  * @param {object} $thisElement a jQuery object pointing to the element
+ * @param {string} type
+ * @param {object} options
  */
 Functions.addDatepicker = function ($thisElement, type, options) {
     if (type !== 'date' && type !== 'time' && type !== 'datetime' && type !== 'timestamp') {
@@ -159,7 +160,7 @@ Functions.addDatepicker = function ($thisElement, type, options) {
                 // Fix wrong timepicker z-index, doesn't work without timeout
                 $('#ui-timepicker-div').css('z-index', $('#ui-datepicker-div').css('z-index'));
                 // Integrate tooltip text into dialog
-                var tooltip = $thisElement.tooltip('instance');
+                var tooltip = $thisElement.uiTooltip('instance');
                 if (typeof tooltip !== 'undefined') {
                     tooltip.disable();
                     var $note = $('<p class="note"></div>');
@@ -177,7 +178,7 @@ Functions.addDatepicker = function ($thisElement, type, options) {
             if (typeof $thisElement.data('datepicker') !== 'undefined') {
                 $thisElement.data('datepicker').inline = false;
             }
-            var tooltip = $thisElement.tooltip('instance');
+            var tooltip = $thisElement.uiTooltip('instance');
             if (typeof tooltip !== 'undefined') {
                 tooltip.enable();
             }
@@ -262,8 +263,10 @@ Functions.handleRedirectAndReload = function (data) {
  *
  * @param $textarea   jQuery object wrapping the textarea to be made the editor
  * @param options     optional options for CodeMirror
- * @param resize      optional resizing ('vertical', 'horizontal', 'both')
+ * @param {'vertical'|'horizontal'|'both'} resize optional resizing ('vertical', 'horizontal', 'both')
  * @param lintOptions additional options for lint
+ *
+ * @return {object|null}
  */
 Functions.getSqlEditor = function ($textarea, options, resize, lintOptions) {
     var resizeType = resize;
@@ -374,11 +377,14 @@ Functions.tooltip = function ($elements, item, myContent, additionalOptions) {
         hide: false
     };
 
-    $elements.tooltip($.extend(true, defaultOptions, additionalOptions));
+    $elements.uiTooltip($.extend(true, defaultOptions, additionalOptions));
 };
 
 /**
  * HTML escaping
+ *
+ * @param {any} unsafe
+ * @return {string | false}
  */
 Functions.escapeHtml = function (unsafe) {
     if (typeof(unsafe) !== 'undefined') {
@@ -394,6 +400,12 @@ Functions.escapeHtml = function (unsafe) {
     }
 };
 
+/**
+ * JavaScript escaping
+ *
+ * @param {any} unsafe
+ * @return {string | false}
+ */
 Functions.escapeJsString = function (unsafe) {
     if (typeof(unsafe) !== 'undefined') {
         return unsafe
@@ -412,10 +424,18 @@ Functions.escapeJsString = function (unsafe) {
     }
 };
 
+/**
+ * @param {string} s
+ * @return {string}
+ */
 Functions.escapeBacktick = function (s) {
     return s.replace('`', '``');
 };
 
+/**
+ * @param {string} s
+ * @return {string}
+ */
 Functions.escapeSingleQuote = function (s) {
     return s.replace('\\', '\\\\').replace('\'', '\\\'');
 };
@@ -427,6 +447,8 @@ Functions.sprintf = function () {
 /**
  * Hides/shows the default value input field, depending on the default type
  * Ticks the NULL checkbox if NULL is chosen as default value.
+ *
+ * @param {JQuery<HTMLElement>} $defaultType
  */
 Functions.hideShowDefaultValue = function ($defaultType) {
     if ($defaultType.val() === 'USER_DEFINED') {
@@ -474,7 +496,7 @@ Functions.verifyColumnsProperties = function () {
  * Add a hidden field to the form to indicate that this will be an
  * Ajax request (only if this hidden field does not exist)
  *
- * @param $form object   the form
+ * @param {object} $form the form
  */
 Functions.prepareForAjaxRequest = function ($form) {
     if (! $form.find('input:hidden').is('#ajax_request_hidden')) {
@@ -563,114 +585,6 @@ Functions.suggestPassword = function (passwordForm) {
 };
 
 /**
- * Version string to integer conversion.
- */
-Functions.parseVersionString = function (str) {
-    if (typeof(str) !== 'string') {
-        return false;
-    }
-    var add = 0;
-    // Parse possible alpha/beta/rc/
-    var state = str.split('-');
-    if (state.length >= 2) {
-        if (state[1].substr(0, 2) === 'rc') {
-            add = - 20 - parseInt(state[1].substr(2), 10);
-        } else if (state[1].substr(0, 4) === 'beta') {
-            add =  - 40 - parseInt(state[1].substr(4), 10);
-        } else if (state[1].substr(0, 5) === 'alpha') {
-            add =  - 60 - parseInt(state[1].substr(5), 10);
-        } else if (state[1].substr(0, 3) === 'dev') {
-            /* We don't handle dev, it's git snapshot */
-            add = 0;
-        }
-    }
-    // Parse version
-    var x = str.split('.');
-    // Use 0 for non existing parts
-    var maj = parseInt(x[0], 10) || 0;
-    var min = parseInt(x[1], 10) || 0;
-    var pat = parseInt(x[2], 10) || 0;
-    var hotfix = parseInt(x[3], 10) || 0;
-    return maj * 100000000 + min * 1000000 + pat * 10000 + hotfix * 100 + add;
-};
-
-/**
- * Indicates current available version on main page.
- */
-Functions.currentVersion = function (data) {
-    if (data && data.version && data.date) {
-        var current = Functions.parseVersionString($('span.version').text());
-        var latest = Functions.parseVersionString(data.version);
-        var url = 'https://www.phpmyadmin.net/files/' + Functions.escapeHtml(encodeURIComponent(data.version)) + '/';
-        var versionInformationMessage = document.createElement('span');
-        versionInformationMessage.className = 'latest';
-        var versionInformationMessageLink = document.createElement('a');
-        versionInformationMessageLink.href = url;
-        versionInformationMessageLink.className = 'disableAjax';
-        var versionInformationMessageLinkText = document.createTextNode(data.version);
-        versionInformationMessageLink.appendChild(versionInformationMessageLinkText);
-        var prefixMessage = document.createTextNode(Messages.strLatestAvailable + ' ');
-        versionInformationMessage.appendChild(prefixMessage);
-        versionInformationMessage.appendChild(versionInformationMessageLink);
-        if (latest > current) {
-            var message = Functions.sprintf(
-                Messages.strNewerVersion,
-                Functions.escapeHtml(data.version),
-                Functions.escapeHtml(data.date)
-            );
-            var htmlClass = 'alert alert-primary';
-            if (Math.floor(latest / 10000) === Math.floor(current / 10000)) {
-                /* Security update */
-                htmlClass = 'alert alert-danger';
-            }
-            $('#newer_version_notice').remove();
-            var mainContainerDiv = document.createElement('div');
-            mainContainerDiv.id = 'newer_version_notice';
-            mainContainerDiv.className = htmlClass;
-            var mainContainerDivLink = document.createElement('a');
-            mainContainerDivLink.href = url;
-            mainContainerDivLink.className = 'disableAjax';
-            var mainContainerDivLinkText = document.createTextNode(message);
-            mainContainerDivLink.appendChild(mainContainerDivLinkText);
-            mainContainerDiv.appendChild(mainContainerDivLink);
-            $('#maincontainer').append($(mainContainerDiv));
-        }
-        if (latest === current) {
-            versionInformationMessage = document.createTextNode(' (' + Messages.strUpToDate + ')');
-        }
-        /* Remove extra whitespace */
-        var versionInfo = $('#li_pma_version').contents().get(2);
-        if (typeof versionInfo !== 'undefined') {
-            versionInfo.textContent = versionInfo.textContent.trim();
-        }
-        var $liPmaVersion = $('#li_pma_version');
-        $liPmaVersion.find('span.latest').remove();
-        $liPmaVersion.append($(versionInformationMessage));
-    }
-};
-
-/**
- * Loads Git revision data from ajax for index.php
- */
-Functions.displayGitRevision = function () {
-    $('#is_git_revision').remove();
-    $('#li_pma_version_git').remove();
-    $.get(
-        'index.php?route=/git-revision',
-        {
-            'server': CommonParams.get('server'),
-            'ajax_request': true,
-            'no_debug': true
-        },
-        function (data) {
-            if (typeof data !== 'undefined' && data.success === true) {
-                $(data.message).insertAfter('#li_pma_version');
-            }
-        }
-    );
-};
-
-/**
  * for PhpMyAdmin\Display\ChangePassword and /user-password
  */
 Functions.displayPasswordGenerateButton = function () {
@@ -708,8 +622,8 @@ Functions.displayPasswordGenerateButton = function () {
 /**
  * selects the content of a given object, f.e. a textarea
  *
- * @param {object}  element  element of which the content will be selected
- * @param {var}     lock     variable which holds the lock for this element or true, if no lock exists
+ * @param {object} element   element of which the content will be selected
+ * @param {any | true} lock  variable which holds the lock for this element or true, if no lock exists
  * @param {boolean} onlyOnce boolean if true this is only done once f.e. only on first focus
  */
 Functions.selectContent = function (element, lock, onlyOnce) {
@@ -730,10 +644,10 @@ Functions.selectContent = function (element, lock, onlyOnce) {
  * Displays a confirmation box before submitting a "DROP/DELETE/ALTER" query.
  * This function is called while clicking links
  *
- * @param theLink     object the link
- * @param theSqlQuery object the sql query to submit
+ * @param {object} theLink     the link
+ * @param {object} theSqlQuery the sql query to submit
  *
- * @return boolean  whether to run the query or not
+ * @return {boolean} whether to run the query or not
  */
 Functions.confirmLink = function (theLink, theSqlQuery) {
     // Confirmation is not required in the configuration file
@@ -759,12 +673,12 @@ Functions.confirmLink = function (theLink, theSqlQuery) {
  * submitting it if required.
  * This function is called by the 'Functions.checkSqlQuery()' js function.
  *
- * @param theForm1 object   the form
- * @param sqlQuery1 string  the sql query string
+ * @param {object} theForm1  the form
+ * @param {string} sqlQuery1 the sql query string
  *
- * @return boolean  whether to run the query or not
+ * @return {boolean} whether to run the query or not
  *
- * @see     Functions.checkSqlQuery()
+ * @see Functions.checkSqlQuery()
  */
 Functions.confirmQuery = function (theForm1, sqlQuery1) {
     // Confirmation is not required in the configuration file
@@ -817,11 +731,11 @@ Functions.confirmQuery = function (theForm1, sqlQuery1) {
  * Displays an error message if the user submitted the sql query form with no
  * sql query, else checks for "DROP/DELETE/ALTER" statements
  *
- * @param theForm object the form
+ * @param {object} theForm the form
  *
- * @return boolean  always false
+ * @return {boolean} always false
  *
- * @see     Functions.confirmQuery()
+ * @see Functions.confirmQuery()
  */
 Functions.checkSqlQuery = function (theForm) {
     // get the textarea element containing the query
@@ -876,12 +790,13 @@ Functions.emptyCheckTheField = function (theForm, theFieldName) {
 /**
  * Ensures a value submitted in a form is numeric and is in a range
  *
- * @param object   the form
- * @param string   the name of the form field to check
- * @param integer  the minimum authorized value
- * @param integer  the maximum authorized value
+ * @param {object} theForm the form
+ * @param {string} theFieldName the name of the form field to check
+ * @param {any} message
+ * @param {number} minimum the minimum authorized value
+ * @param {number} maximum the maximum authorized value
  *
- * @return boolean  whether a valid number has been submitted or not
+ * @return {boolean}  whether a valid number has been submitted or not
  */
 Functions.checkFormElementInRange = function (theForm, theFieldName, message, minimum, maximum) {
     var theField         = theForm.elements[theFieldName];
@@ -1180,11 +1095,11 @@ AJAX.registerOnload('functions.js', function () {
 /**
   * Checks/unchecks all options of a <select> element
   *
-  * @param string   the form name
-  * @param string   the element name
-  * @param boolean  whether to check or to uncheck options
+  * @param {string} theForm   the form name
+  * @param {string} theSelect the element name
+  * @param {boolean} doCheck  whether to check or to uncheck options
   *
-  * @return boolean  always true
+  * @return {boolean} always true
   */
 Functions.setSelectOptions = function (theForm, theSelect, doCheck) {
     $('form[name=\'' + theForm + '\'] select[name=\'' + theSelect + '\']').find('option').prop('selected', doCheck);
@@ -1193,6 +1108,8 @@ Functions.setSelectOptions = function (theForm, theSelect, doCheck) {
 
 /**
  * Sets current value for query box.
+ * @param {string} query
+ * @return {void}
  */
 Functions.setQuery = function (query) {
     if (codeMirrorEditor) {
@@ -1207,7 +1124,7 @@ Functions.setQuery = function (query) {
 /**
  * Handles 'Simulate query' button on SQL query box.
  *
- * @return void
+ * @return {void}
  */
 Functions.handleSimulateQueryButton = function () {
     var updateRegExp = new RegExp('^\\s*UPDATE\\s+((`[^`]+`)|([A-Za-z0-9_$]+))\\s+SET\\s', 'i');
@@ -1239,8 +1156,11 @@ Functions.handleSimulateQueryButton = function () {
 /**
   * Create quick sql statements.
   *
+  * @param {'clear'|'format'|'saved'|'selectall'|'select'|'insert'|'update'|'delete'} queryType
+  *
   */
 Functions.insertQuery = function (queryType) {
+    var table;
     if (queryType === 'clear') {
         Functions.setQuery('');
         return;
@@ -1268,10 +1188,18 @@ Functions.insertQuery = function (queryType) {
         }
         return;
     } else if (queryType === 'saved') {
-        if (isStorageSupported('localStorage') && typeof window.localStorage.autoSavedSql !== 'undefined') {
-            Functions.setQuery(window.localStorage.autoSavedSql);
-        } else if (Cookies.get('autoSavedSql')) {
-            Functions.setQuery(Cookies.get('autoSavedSql'));
+        var db = $('input[name="db"]').val();
+        table = $('input[name="table"]').val();
+        var key = db;
+        if (table !== undefined) {
+            key += '.' + table;
+        }
+        key = 'autoSavedSql_' + key;
+        if (isStorageSupported('localStorage') &&
+            typeof window.localStorage.getItem(key) === 'string') {
+            Functions.setQuery(window.localStorage.getItem(key));
+        } else if (Cookies.get(key)) {
+            Functions.setQuery(Cookies.get(key));
         } else {
             Functions.ajaxShowMessage(Messages.strNoAutoSavedQuery);
         }
@@ -1280,7 +1208,7 @@ Functions.insertQuery = function (queryType) {
 
     var query = '';
     var myListBox = document.sqlform.dummy;
-    var table = document.sqlform.table.value;
+    table = document.sqlform.table.value;
 
     if (myListBox.options.length > 0) {
         sqlBoxLocked = true;
@@ -1501,6 +1429,10 @@ $(function () {
 
 /**
  * Returns paper sizes for a given format
+ *
+ * @param {string} format
+ * @param {'x'|'y'} axis
+ * @return {number}
  */
 Functions.pdfPaperSize = function (format, axis) {
     switch (format.toUpperCase()) {
@@ -1756,7 +1688,7 @@ Functions.pdfPaperSize = function (format, axis) {
 /**
  * Get checkbox for foreign key checks
  *
- * @return string
+ * @return {string}
  */
 Functions.getForeignKeyCheckboxLoader = function () {
     var html = '';
@@ -1916,6 +1848,7 @@ AJAX.registerOnload('functions.js', function () {
 
 /**
  * "inputRead" event handler for CodeMirror SQL query editors for autocompletion
+ * @param instance
  */
 Functions.codeMirrorAutoCompleteOnInputRead = function (instance) {
     if (!sqlAutoCompleteInProgress
@@ -2045,6 +1978,9 @@ Functions.catchKeypressesFromSqlInlineEdit = function (event) {
 
 /**
  * Adds doc link to single highlighted SQL element
+ *
+ * @param $elm
+ * @param params
  */
 Functions.documentationAdd = function ($elm, params) {
     if (typeof mysqlDocTemplate === 'undefined') {
@@ -2065,6 +2001,9 @@ Functions.documentationAdd = function ($elm, params) {
 
 /**
  * Generates doc links for keywords inside highlighted SQL
+ *
+ * @param idx
+ * @param elm
  */
 Functions.documentationKeyword = function (idx, elm) {
     var $elm = $(elm);
@@ -2102,6 +2041,9 @@ Functions.documentationKeyword = function (idx, elm) {
 
 /**
  * Generates doc links for builtins inside highlighted SQL
+ *
+ * @param idx
+ * @param elm
  */
 Functions.documentationBuiltin = function (idx, elm) {
     var $elm = $(elm);
@@ -2113,6 +2055,8 @@ Functions.documentationBuiltin = function (idx, elm) {
 
 /**
  * Higlights SQL using CodeMirror.
+ *
+ * @param $base
  */
 Functions.highlightSql = function ($base) {
     var $elm = $base.find('code.sql');
@@ -2136,15 +2080,15 @@ Functions.highlightSql = function ($base) {
 /**
  * Updates an element containing code.
  *
- * @param jQuery Object $base base element which contains the raw and the
- *                            highlighted code.
+ * @param {JQuery} $base     base element which contains the raw and the
+ *                           highlighted code.
  *
- * @param string htmlValue    code in HTML format, displayed if code cannot be
- *                            highlighted
+ * @param {string} htmlValue code in HTML format, displayed if code cannot be
+ *                           highlighted
  *
- * @param string rawValue     raw code, used as a parameter for highlighter
+ * @param {string} rawValue  raw code, used as a parameter for highlighter
  *
- * @return bool               whether content was updated or not
+ * @return {boolean}        whether content was updated or not
  */
 Functions.updateCode = function ($base, htmlValue, rawValue) {
     var $code = $base.find('code');
@@ -2207,18 +2151,18 @@ Functions.updateCode = function ($base, htmlValue, rawValue) {
  * This will show a message that will not disappear automatically, but it
  * can be dismissed by the user after they have finished reading it.
  *
- * @param string  message     string containing the message to be shown.
+ * @param {string} message      string containing the message to be shown.
  *                              optional, defaults to 'Loading...'
- * @param mixed   timeout     number of milliseconds for the message to be visible
+ * @param {any} timeout         number of milliseconds for the message to be visible
  *                              optional, defaults to 5000. If set to 'false', the
  *                              notification will never disappear
- * @param string  type        string to dictate the type of message shown.
+ * @param {string} type         string to dictate the type of message shown.
  *                              optional, defaults to normal notification.
  *                              If set to 'error', the notification will show message
  *                              with red background.
  *                              If set to 'success', the notification will show with
  *                              a green background.
- * @return jQuery object       jQuery Element that holds the message div
+ * @return {JQuery<Element>}   jQuery Element that holds the message div
  *                              this object can be passed to Functions.ajaxRemoveMessage()
  *                              to remove the notification
  */
@@ -2288,7 +2232,7 @@ Functions.ajaxShowMessage = function (message, timeout, type) {
             .delay(newTimeOut)
             .fadeOut('medium', function () {
                 if ($(this).is(':data(tooltip)')) {
-                    $(this).tooltip('destroy');
+                    $(this).uiTooltip('destroy');
                 }
                 // Remove the notification
                 $(this).remove();
@@ -2320,9 +2264,9 @@ Functions.ajaxShowMessage = function (message, timeout, type) {
 /**
  * Removes the message shown for an Ajax operation when it's completed
  *
- * @param jQuery object   jQuery Element that holds the notification
+ * @param {JQuery} $thisMessageBox Element that holds the notification
  *
- * @return nothing
+ * @return {void}
  */
 Functions.ajaxRemoveMessage = function ($thisMessageBox) {
     if ($thisMessageBox !== undefined && $thisMessageBox instanceof jQuery) {
@@ -2330,7 +2274,7 @@ Functions.ajaxRemoveMessage = function ($thisMessageBox) {
             .stop(true, true)
             .fadeOut('medium');
         if ($thisMessageBox.is(':data(tooltip)')) {
-            $thisMessageBox.tooltip('destroy');
+            $thisMessageBox.uiTooltip('destroy');
         } else {
             $thisMessageBox.remove();
         }
@@ -2340,9 +2284,9 @@ Functions.ajaxRemoveMessage = function ($thisMessageBox) {
 /**
  * Requests SQL for previewing before executing.
  *
- * @param jQuery Object $form Form containing query data
+ * @param {JQuery<HTMLElement>} $form Form containing query data
  *
- * @return void
+ * @return {void}
  */
 Functions.previewSql = function ($form) {
     var formUrl = $form.attr('action');
@@ -2399,10 +2343,10 @@ Functions.previewSql = function ($form) {
 /**
  *
  * @param {string}           sqlData  Sql query to preview
- * @param {string}           url       Url to be sent to callback
- * @param {onSubmitCallback} callback  On submit callback function
+ * @param {string}           url      Url to be sent to callback
+ * @param {onSubmitCallback} callback On submit callback function
  *
- * @return void
+ * @return {void}
  */
 Functions.confirmPreviewSql = function (sqlData, url, callback) {
     var $dialogContent = $('<div class="preview_sql"><code class="sql"><pre>'
@@ -2444,9 +2388,9 @@ Functions.confirmPreviewSql = function (sqlData, url, callback) {
 /**
  * check for reserved keyword column name
  *
- * @param jQuery Object $form Form
+ * @param {JQuery} $form Form
  *
- * @returns true|false
+ * @return {boolean}
  */
 Functions.checkReservedWordColumns = function ($form) {
     var isConfirmed = true;
@@ -2477,7 +2421,7 @@ $(function () {
         }, 250);
     });
 
-    $(document).on('mouseup', 'span.ajax_notification.dismissable', function () {
+    $(document).on('mouseup', 'span.ajax_notification.dismissable', function (event) {
         if (holdStarter && event.which === 1) {
             clearTimeout(holdStarter);
             Functions.ajaxRemoveMessage($(this));
@@ -2489,21 +2433,21 @@ $(function () {
      */
     $(document).on('mouseover', 'span.ajax_notification a, span.ajax_notification button, span.ajax_notification input', function () {
         if ($(this).parents('span.ajax_notification').is(':data(tooltip)')) {
-            $(this).parents('span.ajax_notification').tooltip('disable');
+            $(this).parents('span.ajax_notification').uiTooltip('disable');
         }
     });
     $(document).on('mouseout', 'span.ajax_notification a, span.ajax_notification button, span.ajax_notification input', function () {
         if ($(this).parents('span.ajax_notification').is(':data(tooltip)')) {
-            $(this).parents('span.ajax_notification').tooltip('enable');
+            $(this).parents('span.ajax_notification').uiTooltip('enable');
         }
     });
 
     /**
      * Copy text to clipboard
      *
-     * @param text to copy to clipboard
+     * @param {string | number | string[]} text to copy to clipboard
      *
-     * @returns bool true|false
+     * @return {boolean}
      */
     function copyToClipboard (text) {
         var $temp = $('<input>');
@@ -2536,6 +2480,8 @@ $(function () {
 
 /**
  * Hides/shows the "Open in ENUM/SET editor" message, depending on the data type of the column currently selected
+ *
+ * @param selectElement
  */
 Functions.showNoticeForEnum = function (selectElement) {
     var enumNoticeId = selectElement.attr('id').split('_')[1];
@@ -2551,6 +2497,11 @@ Functions.showNoticeForEnum = function (selectElement) {
 /**
  * Creates a Profiling Chart. Used in sql.js
  * and in server/status/monitor.js
+ *
+ * @param target
+ * @param data
+ *
+ * @return {object}
  */
 Functions.createProfilingChart = function (target, data) {
     // create the chart
@@ -2617,9 +2568,9 @@ Functions.createProfilingChart = function (target, data) {
  * Formats a profiling duration nicely (in us and ms time).
  * Used in server/status/monitor.js
  *
- * @param  integer    Number to be formatted, should be in the range of microsecond to second
- * @param  integer    Accuracy, how many numbers right to the comma should be
- * @return string     The formatted number
+ * @param {number} number   Number to be formatted, should be in the range of microsecond to second
+ * @param {number} accuracy Accuracy, how many numbers right to the comma should be
+ * @return {string}        The formatted number
  */
 Functions.prettyProfilingNum = function (number, accuracy) {
     var num = number;
@@ -2642,8 +2593,8 @@ Functions.prettyProfilingNum = function (number, accuracy) {
 /**
  * Formats a SQL Query nicely with newlines and indentation. Depends on Codemirror and MySQL Mode!
  *
- * @param string      Query to be formatted
- * @return string      The formatted query
+ * @param {string} string Query to be formatted
+ * @return {string}      The formatted query
  */
 Functions.sqlPrettyPrint = function (string) {
     if (typeof CodeMirror === 'undefined') {
@@ -2785,13 +2736,15 @@ Functions.sqlPrettyPrint = function (string) {
 
 /**
  * jQuery function that uses jQueryUI's dialogs to confirm with user. Does not
- *  return a jQuery object yet and hence cannot be chained
+ * return a jQuery object yet and hence cannot be chained
  *
- * @param string      question
- * @param string      url           URL to be passed to the callbackFn to make
- *                                  an Ajax call to
- * @param function    callbackFn    callback to execute after user clicks on OK
- * @param function    openCallback  optional callback to run when dialog is shown
+ * @param {string}   question
+ * @param {string}   url          URL to be passed to the callbackFn to make
+ *                                an Ajax call to
+ * @param {Function} callbackFn   callback to execute after user clicks on OK
+ * @param {Function} openCallback optional callback to run when dialog is shown
+ *
+ * @return {bool}
  */
 Functions.confirm = function (question, url, callbackFn, openCallback) {
     var confirmState = CommonParams.get('confirm');
@@ -2807,8 +2760,8 @@ Functions.confirm = function (question, url, callbackFn, openCallback) {
     }
 
     /**
-     * @var    button_options  Object that stores the options passed to jQueryUI
-     *                          dialog
+     * @var button_options Object that stores the options passed to jQueryUI
+     *                     dialog
      */
     var buttonOptions = [
         {
@@ -2846,9 +2799,9 @@ jQuery.fn.confirm = Functions.confirm;
 /**
  * jQuery function to sort a table's body after a new row has been appended to it.
  *
- * @param string      text_selector   string to select the sortKey's text
+ * @param {string} textSelector string to select the sortKey's text
  *
- * @return jQuery Object for chaining purposes
+ * @return {JQuery<HTMLElement>} for chaining purposes
  */
 Functions.sortTable = function (textSelector) {
     return this.each(function () {
@@ -2990,9 +2943,6 @@ AJAX.registerOnload('functions.js', function () {
                         // Redirect to table structure page on creation of new table
                         var argsep = CommonParams.get('arg_separator');
                         var params12 = 'ajax_request=true' + argsep + 'ajax_page_request=true';
-                        if (! (history && history.pushState)) {
-                            params12 += MicroHistory.menus.getRequestParam();
-                        }
                         var tableStructureUrl = 'index.php?route=/table/structure' + argsep + 'server=' + data.params.server +
                             argsep + 'db=' + data.params.db + argsep + 'token=' + data.params.token +
                             argsep + 'goto=' + encodeURIComponent('index.php?route=/database/structure') + argsep + 'table=' + data.params.table + '';
@@ -3011,6 +2961,8 @@ AJAX.registerOnload('functions.js', function () {
     /**
      * Submits the intermediate changes in the table creation form
      * to refresh the UI accordingly
+     *
+     * @param actionParam
      */
     function submitChangesInCreateTableForm (actionParam) {
         /**
@@ -3093,7 +3045,7 @@ AJAX.registerOnload('functions.js', function () {
  * @see    Messages.strPasswordEmpty
  * @see    Messages.strPasswordNotSame
  * @param {object} $theForm The form to be validated
- * @return bool
+ * @return {boolean}
  */
 Functions.checkPassword = function ($theForm) {
     // Did the user select 'no password'?
@@ -3220,7 +3172,7 @@ AJAX.registerOnload('functions.js', function () {
             }
 
             /**
-             * @var this_value  String containing the value of the submit button.
+             * @var {string} thisValue String containing the value of the submit button.
              * Need to append this for the change password form on Server Privileges
              * page to work
              */
@@ -3332,8 +3284,7 @@ AJAX.registerOnload('functions.js', function () {
  */
 Functions.hideShowConnection = function ($engineSelector) {
     var $connection = $('.create_table_form input[name=connection]');
-    var index = $connection.parent('td').index();
-    var $labelTh = $connection.parents('tr').prev('tr').children('th').eq(index);
+    var $labelTh = $('.create_table_form #storage-engine-connection');
     if ($engineSelector.val() !== 'FEDERATED') {
         $connection
             .prop('disabled', true)
@@ -3349,6 +3300,8 @@ Functions.hideShowConnection = function ($engineSelector) {
 
 /**
  * If the column does not allow NULL values, makes sure that default is not NULL
+ *
+ * @param $nullCheckbox
  */
 Functions.validateDefaultValue = function ($nullCheckbox) {
     if (! $nullCheckbox.prop('checked')) {
@@ -3362,8 +3315,8 @@ Functions.validateDefaultValue = function ($nullCheckbox) {
 /**
  * function to populate the input fields on picking a column from central list
  *
- * @param string  input_id input id of the name field for the column to be populated
- * @param integer offset of the selected column in central list of columns
+ * @param {string} inputId input id of the name field for the column to be populated
+ * @param {number} offset of the selected column in central list of columns
  */
 Functions.autoPopulate = function (inputId, offset) {
     var db = CommonParams.get('db');
@@ -3743,9 +3696,9 @@ AJAX.registerOnload('functions.js', function () {
 /**
  * Ensures indexes names are valid according to their type and, for a primary
  * key, lock index name to 'PRIMARY'
- * @param string   form_id  Variable which parses the form name as
- *                            the input
- * @return boolean  false    if there is no index form, true else
+ * @param {string} formId Variable which parses the form name as
+ *                        the input
+ * @return {boolean} false if there is no index form, true else
  */
 Functions.checkIndexName = function (formId) {
     if ($('#' + formId).length === 0) {
@@ -3961,7 +3914,7 @@ Functions.showIndexEditDialog = function ($outer) {
  * Function to display tooltips that were
  * generated on the PHP side by PhpMyAdmin\Util::showHint()
  *
- * @param object $div a div jquery object which specifies the
+ * @param {object} $div a div jquery object which specifies the
  *                    domain for searching for tooltips. If we
  *                    omit this parameter the function searches
  *                    in the whole body
@@ -4001,6 +3954,8 @@ $(function () {
 
 /**
  * Changes status of slider
+ *
+ * @param $element
  */
 Functions.setStatusLabel = function ($element) {
     var text;
@@ -4016,6 +3971,8 @@ Functions.setStatusLabel = function ($element) {
  * var  toggleButton  This is a function that creates a toggle
  *                    sliding button given a jQuery reference
  *                    to the correct DOM element
+ *
+ * @param $obj
  */
 Functions.toggleButton = function ($obj) {
     // In rtl mode the toggle switch is flipped horizontally
@@ -4027,15 +3984,15 @@ Functions.toggleButton = function ($obj) {
         right = 'left';
     }
     /**
-     *  var  h  Height of the button, used to scale the
+     * @var  h  Height of the button, used to scale the
      *          background image and position the layers
      */
     var h = $obj.height();
     $('img', $obj).height(h);
     $('table', $obj).css('bottom', h - 1);
     /**
-     *  var  on   Width of the "ON" part of the toggle switch
-     *  var  off  Width of the "OFF" part of the toggle switch
+     * @var  on   Width of the "ON" part of the toggle switch
+     * @var  off  Width of the "OFF" part of the toggle switch
      */
     var on  = $('td.toggleOn', $obj).width();
     var off = $('td.toggleOff', $obj).width();
@@ -4044,16 +4001,16 @@ Functions.toggleButton = function ($obj) {
     $('td.toggleOn > div', $obj).width(Math.max(on, off) + 2);
     $('td.toggleOff > div', $obj).width(Math.max(on, off) + 2);
     /**
-     *  var  w  Width of the central part of the switch
+     *  @var  w  Width of the central part of the switch
      */
     var w = parseInt(($('img', $obj).height() / 16) * 22, 10);
     // Resize the central part of the switch on the top
     // layer to match the background
     $($obj).find('table td').eq(1).children('div').width(w);
     /**
-     *  var  imgw    Width of the background image
-     *  var  tblw    Width of the foreground layer
-     *  var  offset  By how many pixels to move the background
+     * @var  imgw    Width of the background image
+     * @var  tblw    Width of the foreground layer
+     * @var  offset  By how many pixels to move the background
      *               image, so that it matches the top layer
      */
     var imgw = $('img', $obj).width();
@@ -4062,8 +4019,8 @@ Functions.toggleButton = function ($obj) {
     // Move the background to match the layout of the top layer
     $obj.find('img').css(right, offset);
     /**
-     *  var  offw    Outer width of the "ON" part of the toggle switch
-     *  var  btnw    Outer width of the central part of the switch
+     * @var  offw    Outer width of the "ON" part of the toggle switch
+     * @var  btnw    Outer width of the central part of the switch
      */
     var offw = $('td.toggleOff', $obj).outerWidth();
     var btnw = $($obj).find('table td').eq(1).outerWidth();
@@ -4071,7 +4028,7 @@ Functions.toggleButton = function ($obj) {
     // the switch plus the central part fit into it.
     $obj.width(offw + btnw + 2);
     /**
-     *  var  move  How many pixels to move the
+     * @var  move  How many pixels to move the
      *             switch by when toggling
      */
     var move = $('td.toggleOff', $obj).outerWidth();
@@ -4189,25 +4146,6 @@ AJAX.registerOnload('functions.js', function () {
     });
 
     /**
-     * Load version information asynchronously.
-     */
-    if ($('li.jsversioncheck').length > 0) {
-        $.ajax({
-            dataType: 'json',
-            url: 'index.php?route=/version-check',
-            method: 'POST',
-            data: {
-                'server': CommonParams.get('server')
-            },
-            success: Functions.currentVersion
-        });
-    }
-
-    if ($('#is_git_revision').length > 0) {
-        setTimeout(Functions.displayGitRevision, 10);
-    }
-
-    /**
      * Slider effect.
      */
     Functions.initSlider();
@@ -4306,14 +4244,14 @@ AJAX.registerTeardown('functions.js', function () {
 /**
  * Creates a message inside an object with a sliding effect
  *
- * @param msg    A string containing the text to display
- * @param $obj   a jQuery object containing the reference
+ * @param {string} msg    A string containing the text to display
+ * @param {JQuery} $object   a jQuery object containing the reference
  *                 to the element where to put the message
  *                 This is optional, if no element is
  *                 provided, one will be created below the
  *                 navigation links at the top of the page
  *
- * @return bool   True on success, false on failure
+ * @return {boolean} True on success, false on failure
  */
 Functions.slidingMessage = function (msg, $object) {
     var $obj = $object;
@@ -4455,6 +4393,9 @@ AJAX.registerOnload('functions.js', function () {
 
 /**
  * Return value of a cell in a table.
+ *
+ * @param {string} td
+ * @return {string}
  */
 Functions.getCellValue = function (td) {
     var $td = $(td);
@@ -4479,45 +4420,15 @@ $(window).on('popstate', function () {
  * Unbind all event handlers before tearing down a page
  */
 AJAX.registerTeardown('functions.js', function () {
-    $(document).off('click', 'a.themeselect');
     $(document).off('change', '.autosubmit');
-    $('a.take_theme').off('click');
 });
 
 AJAX.registerOnload('functions.js', function () {
-    /**
-     * Theme selector.
-     */
-    $(document).on('click', 'a.themeselect', function (e) {
-        window.open(
-            e.target,
-            'themes',
-            'left=10,top=20,width=510,height=350,scrollbars=yes,status=yes,resizable=yes'
-        );
-        return false;
-    });
-
     /**
      * Automatic form submission on change.
      */
     $(document).on('change', '.autosubmit', function () {
         $(this).closest('form').trigger('submit');
-    });
-
-    /**
-     * Theme changer.
-     */
-    $('a.take_theme').on('click', function () {
-        var what = this.name;
-        /* eslint-disable compat/compat */
-        if (window.opener && window.opener.document.forms.setTheme.elements.set_theme) {
-            window.opener.document.forms.setTheme.elements.set_theme.value = what;
-            window.opener.document.forms.setTheme.submit();
-            window.close();
-            return false;
-        }
-        /* eslint-enable compat/compat */
-        return true;
     });
 });
 
@@ -4815,9 +4726,11 @@ AJAX.registerOnload('functions.js', function () {
 /**
  * Formats a byte number to human-readable form
  *
- * @param bytes the bytes to format
- * @param optional subdecimals the number of digits after the point
- * @param optional pointchar the char to use as decimal point
+ * @param bytesToFormat the bytes to format
+ * @param subDecimals optional subdecimals the number of digits after the point
+ * @param pointChar optional pointchar the char to use as decimal point
+ *
+ * @return {string}
  */
 Functions.formatBytes = function (bytesToFormat, subDecimals, pointChar) {
     var bytes = bytesToFormat;
@@ -4863,6 +4776,10 @@ AJAX.registerOnload('functions.js', function () {
 
 /**
  * Formats timestamp for display
+ *
+ * @param {string} date
+ * @param {bool} seconds
+ * @return {string}
  */
 Functions.formatDateTime = function (date, seconds) {
     var result = $.datepicker.formatDate('yy-mm-dd', date);
@@ -4881,6 +4798,7 @@ Functions.formatDateTime = function (date, seconds) {
 
 /**
  * Check than forms have less fields than max allowed by PHP.
+ * @return {boolean}
  */
 Functions.checkNumberOfFields = function () {
     if (typeof maxInputVars === 'undefined') {
@@ -4906,7 +4824,7 @@ Functions.checkNumberOfFields = function () {
  * Ignore the displayed php errors.
  * Simply removes the displayed errors.
  *
- * @param  clearPrevErrors whether to clear errors stored
+ * @param clearPrevErrors whether to clear errors stored
  *             in $_SESSION['prev_errors'] at server
  *
  */
@@ -4935,6 +4853,9 @@ Functions.ignorePhpErrors = function (clearPrevErrors) {
  * Toggle the Datetimepicker UI if the date value entered
  * by the user in the 'text box' is not going to be accepted
  * by the Datetimepicker plugin (but is accepted by MySQL)
+ *
+ * @param $td
+ * @param $inputField
  */
 Functions.toggleDatepickerIfInvalid = function ($td, $inputField) {
     // Regex allowed by the Datetimepicker UI
@@ -5028,11 +4949,11 @@ AJAX.registerOnload('functions.js', function () {
  * Returns an HTML IMG tag for a particular image from a theme,
  * which may be an actual file or an icon from a sprite
  *
- * @param string image      The name of the file to get
- * @param string alternate  Used to set 'alt' and 'title' attributes of the image
- * @param object attributes An associative array of other attributes
+ * @param {string} image      The name of the file to get
+ * @param {string} alternate  Used to set 'alt' and 'title' attributes of the image
+ * @param {object} attributes An associative array of other attributes
  *
- * @return Object The requested image, this object has two methods:
+ * @return {object} The requested image, this object has two methods:
  *                  .toString()        - Returns the IMG tag for the requested image
  *                  .attr(name)        - Returns a particular attribute of the IMG
  *                                       tag given it's name
@@ -5153,9 +5074,9 @@ Functions.configSet = function (key, value) {
  *
  * @param {string}     key             Configuration key.
  * @param {boolean}    cached          Configuration type.
- * @param {Function}   successCallback  The callback to call after the value is received
+ * @param {Function}   successCallback The callback to call after the value is received
  *
- * @return {object}                Configuration value.
+ * @return {void}
  */
 Functions.configGet = function (key, cached, successCallback) {
     var isCached = (typeof cached !== 'undefined') ? cached : true;
@@ -5167,8 +5088,6 @@ Functions.configGet = function (key, cached, successCallback) {
     // Result not found in local storage or ignored.
     // Hitting the server.
     $.ajax({
-        // Value at false to be synchronous (then ignore the callback on success)
-        async: typeof successCallback === 'function',
         url: 'index.php?route=/config/get',
         type: 'POST',
         dataType: 'json',
@@ -5191,11 +5110,12 @@ Functions.configGet = function (key, cached, successCallback) {
             }
         }
     });
-    return JSON.parse(localStorage.getItem(key));
 };
 
 /**
  * Return POST data as stored by Generator::linkOrButton
+ *
+ * @return {string}
  */
 Functions.getPostData = function () {
     var dataPost = this.attr('data-post');

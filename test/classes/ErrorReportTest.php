@@ -9,14 +9,17 @@ use PhpMyAdmin\ErrorReport;
 use PhpMyAdmin\Relation;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Utils\HttpRequest;
+use PhpMyAdmin\Version;
+
+use function define;
+use function defined;
 use function htmlspecialchars;
+use function json_encode;
+use function phpversion;
+
 use const ENT_QUOTES;
 use const JSON_PRETTY_PRINT;
 use const JSON_UNESCAPED_SLASHES;
-use function define;
-use function defined;
-use function json_encode;
-use function phpversion;
 
 /**
  * PhpMyAdmin\Tests\ErrorReportTest class
@@ -31,7 +34,6 @@ class ErrorReportTest extends AbstractTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        parent::defineVersionConstants();
         $GLOBALS['server'] = 1;
         $GLOBALS['cfg']['ServerDefault'] = 1;
         $GLOBALS['cfg']['ProxyUrl'] = '';
@@ -40,20 +42,27 @@ class ErrorReportTest extends AbstractTestCase
         $_SERVER['SERVER_SOFTWARE'] = 'SERVER_SOFTWARE';
         $_SERVER['HTTP_USER_AGENT'] = 'HTTP_USER_AGENT';
         $_COOKIE['pma_lang'] = 'en';
-        $GLOBALS['PMA_Config']->set('is_https', false);
+        $GLOBALS['config']->set('is_https', false);
 
         if (! defined('PMA_USR_BROWSER_AGENT')) {
             define('PMA_USR_BROWSER_AGENT', 'Other');
         }
+
         if (! defined('PMA_USR_BROWSER_VER')) {
             define('PMA_USR_BROWSER_VER', 1);
         }
+
         if (! defined('PMA_USR_OS')) {
             define('PMA_USR_OS', 'os');
         }
 
         $template = new Template();
-        $this->errorReport = new ErrorReport(new HttpRequest(), new Relation(null, $template), $template);
+        $this->errorReport = new ErrorReport(
+            new HttpRequest(),
+            new Relation(null, $template),
+            $template,
+            $GLOBALS['config']
+        );
         $this->errorReport->setSubmissionUrl('http://localhost');
     }
 
@@ -76,7 +85,7 @@ class ErrorReportTest extends AbstractTestCase
         ];
 
         $report = [
-            'pma_version' => PMA_VERSION,
+            'pma_version' => Version::VERSION,
             'browser_name' => PMA_USR_BROWSER_AGENT,
             'browser_version' => PMA_USR_BROWSER_VER,
             'user_os' => PMA_USR_OS,
@@ -117,7 +126,7 @@ class ErrorReportTest extends AbstractTestCase
         $return = 'return';
 
         $httpRequest = $this->getMockBuilder(HttpRequest::class)
-            ->setMethods(['create'])
+            ->onlyMethods(['create'])
             ->getMock();
         $httpRequest->expects($this->once())
             ->method('create')
@@ -131,7 +140,12 @@ class ErrorReportTest extends AbstractTestCase
             ->willReturn($return);
 
         $template = new Template();
-        $this->errorReport = new ErrorReport($httpRequest, new Relation(null, $template), $template);
+        $this->errorReport = new ErrorReport(
+            $httpRequest,
+            new Relation(null, $template),
+            $template,
+            $GLOBALS['config']
+        );
         $this->errorReport->setSubmissionUrl($submissionUrl);
 
         $this->assertEquals($return, $this->errorReport->send($report));
@@ -172,11 +186,10 @@ class ErrorReportTest extends AbstractTestCase
             ],
             'url' => 'http://pma.7.3.local/index.php?route=/table/sql&db=aaaaa&table=a&server=14',
         ];
-        $_POST['microhistory'] = '';
         $_POST['description'] = 'description';
 
         $report = [
-            'pma_version' => PMA_VERSION,
+            'pma_version' => Version::VERSION,
             'browser_name' => PMA_USR_BROWSER_AGENT,
             'browser_version' => PMA_USR_BROWSER_VER,
             'user_os' => PMA_USR_OS,
@@ -203,7 +216,6 @@ class ErrorReportTest extends AbstractTestCase
                 ],
                 'uri' => 'index.php?route=%2Ftable%2Fsql',
             ],
-            'microhistory' => $_POST['microhistory'],
             'steps' => $_POST['description'],
         ];
         $expectedData = json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);

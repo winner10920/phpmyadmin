@@ -13,6 +13,7 @@ namespace PhpMyAdmin\Tests\Stubs;
 
 use PhpMyAdmin\Header;
 use PhpMyAdmin\Message;
+
 use function is_array;
 
 class Response extends \PhpMyAdmin\Response
@@ -76,12 +77,9 @@ class Response extends \PhpMyAdmin\Response
     /**
      * Add HTML code to the response stub
      *
-     * @param string $content A string to be appended to
-     *                        the current output buffer
-     *
-     * @return void
+     * @param string|Message|array<int, string|Message> $content
      */
-    public function addHTML($content)
+    public function addHTML($content): void
     {
         if (is_array($content)) {
             foreach ($content as $msg) {
@@ -97,25 +95,20 @@ class Response extends \PhpMyAdmin\Response
     /**
      * Add JSON code to the response stub
      *
-     * @param mixed $json  Either a key (string) or an
-     *                     array or key-value pairs
-     * @param mixed $value Null, if passing an array in $json otherwise
-     *                     it's a string value to the key
-     *
-     * @return void
+     * @param array-key|array<array-key, mixed> $json  Either a key (string) or an array or key-value pairs
+     * @param mixed|null                        $value Null, if passing an array in $json otherwise
+     *                                                 it's a string value to the key
      */
-    public function addJSON($json, $value = null)
+    public function addJSON($json, $value = null): void
     {
         if (is_array($json)) {
             foreach ($json as $key => $value) {
                 $this->addJSON($key, $value);
             }
+        } elseif ($value instanceof Message) {
+            $this->json[$json] = $value->getDisplay();
         } else {
-            if ($value instanceof Message) {
-                $this->json[$json] = $value->getDisplay();
-            } else {
-                $this->json[$json] = $value;
-            }
+            $this->json[$json] = $value;
         }
     }
 

@@ -30,7 +30,6 @@ class DatabaseInterfaceTest extends AbstractTestCase
     {
         parent::setUp();
         parent::loadDefaultConfig();
-        parent::defineVersionConstants();
         $GLOBALS['server'] = 0;
         $extension = new DbiDummy();
         $this->dbi = new DatabaseInterface($extension);
@@ -50,7 +49,6 @@ class DatabaseInterfaceTest extends AbstractTestCase
         SessionCache::remove('mysql_cur_user');
 
         $extension = new DbiDummy();
-        /** @var array $value */
         $extension->setResult('SELECT CURRENT_USER();', $value);
 
         $dbi = new DatabaseInterface($extension);

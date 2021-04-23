@@ -1102,7 +1102,7 @@ are always ways to make your installation more secure:
 * If you are afraid of automated attacks, enabling Captcha by
   :config:option:`$cfg['CaptchaLoginPublicKey']` and
   :config:option:`$cfg['CaptchaLoginPrivateKey']` might be an option.
-* Failed login attemps are logged to syslog (if available, see
+* Failed login attempts are logged to syslog (if available, see
   :config:option:`$cfg['AuthLog']`). This can allow using a tool such as
   fail2ban to block brute-force attempts. Note that the log file used by syslog
   is not the same as the Apache error or access log files.
@@ -1131,6 +1131,9 @@ are several configuration options involved in the SSL setup:
 :config:option:`$cfg['Servers'][$i]['ssl_verify']`
     This configuration disables server certificate verification. Use with
     caution.
+
+When the database server is using a local connection or private network and SSL can not be configured
+you can use :config:option:`$cfg['MysqlSslWarningSafeHosts']` to explicitly list the hostnames that are considered secure.
 
 .. seealso::
 

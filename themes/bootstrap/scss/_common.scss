@@ -42,12 +42,6 @@ button.mult_submit {
   background-image: linear-gradient(#fff, #ccc);
 }
 
-select {
-  &#sel-lang {
-    width: auto;
-  }
-}
-
 textarea {
   &.char {
     margin: 6px;
@@ -440,12 +434,6 @@ div.tools a:hover,
   color: #f00;
 }
 
-// forbidden, no privileges
-.noPrivileges {
-  color: #f00;
-  font-weight: bold;
-}
-
 .error {
   border: 1px solid maroon !important;
   margin-left: 2px;
@@ -506,14 +494,6 @@ body#loginform {
   }
 }
 
-#login_form {
-  text-align: left;
-}
-
-#login_form .pma-fieldset.tblFooters {
-  text-align: right;
-}
-
 div.container.modal_form {
   margin: 0 auto;
   width: 30em;
@@ -530,21 +510,6 @@ div#modalOverlay {
   width: 100%;
   background: #fff;
   z-index: 900;
-}
-
-form.login {
-  input {
-    &[type=text],
-    &[type=password] {
-      box-sizing: border-box;
-      width: 14em;
-    }
-  }
-
-  select {
-    box-sizing: border-box;
-    width: 14em;
-  }
 }
 
 label.col-3.d-flex.align-items-center {
@@ -777,11 +742,6 @@ h3#serverstatusqueries span {
   display: inline;
 }
 
-.buttonlinks {
-  float: right;
-  white-space: nowrap;
-}
-
 // Also used for the variables page
 .pma-fieldset#tableFilter {
   padding: 0.1em 1em;
@@ -953,36 +913,6 @@ div#profilingchart {
   font-size: 1.7em;
 }
 
-#sectionlinks {
-  margin-bottom: 15px;
-  padding: 16px;
-  background: #f3f3f3;
-  border: 1px solid #aaa;
-  border-radius: 5px;
-  box-shadow: 0 1px 1px #fff inset;
-}
-
-#sectionlinks a,
-.buttonlinks a,
-a.button {
-  font-weight: bold;
-  text-shadow: 0 1px 0 #fff;
-  margin-bottom: 7px;
-  margin-left: 7px;
-  border: 1px solid #aaa;
-  padding: 7px;
-  color: #111 !important;
-  text-decoration: none;
-  background-color: #ddd;
-  white-space: nowrap;
-  border-radius: 20px;
-  background-image: linear-gradient(#f8f8f8, #d8d8d8);
-
-  &:hover {
-    background: linear-gradient(#fff, #ddd);
-  }
-}
-
 textarea {
   &#sqlquery {
     width: 100%;
@@ -1029,17 +959,6 @@ textarea {
   border: solid 1px #888;
   background: #fff;
 }
-
-/* end main page */
-
-/* iconic view for ul items */
-
-li.no_bullets {
-  list-style-type: none !important;
-  margin-left: -25px !important; //align with other list items which have bullets
-}
-
-// end iconic view for ul items
 
 #body_browse_foreigners {
   background: $navi-background;
@@ -1090,6 +1009,8 @@ label.desc {
 }
 
 code {
+  font-size: 1em;
+
   &.php {
     display: block;
     padding-left: 1em;
@@ -2006,7 +1927,7 @@ input#auto_increment_opt {
 }
 
 .cDrop {
-  left: 0;
+  right: 0;
   position: absolute;
   top: 0;
 }
@@ -2015,9 +1936,7 @@ input#auto_increment_opt {
   background: url("../img/col_drop.png");
   cursor: pointer;
   height: 16px;
-  margin-left: 0.3em;
   margin-top: 0.3em;
-  position: absolute;
   width: 16px;
 
   &:hover {
@@ -2034,6 +1953,8 @@ input#auto_increment_opt {
   border: solid 1px #999;
   position: absolute;
   box-shadow: 0 0.2em 0.5em #333;
+  margin-left: 75%;
+  right: 0;
 
   .lDiv div {
     padding: 0.2em 0.5em 0.2em;

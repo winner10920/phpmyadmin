@@ -15,7 +15,6 @@ class ThemeManagerTest extends AbstractTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        parent::defineVersionConstants();
         parent::setGlobalConfig();
         $GLOBALS['cfg']['ThemePerServer'] = false;
         $GLOBALS['cfg']['ThemeDefault'] = 'pmahomme';
@@ -70,19 +69,5 @@ class ThemeManagerTest extends AbstractTestCase
         $this->assertTrue(
             $tm->setThemeCookie()
         );
-    }
-
-    /**
-     * Test for getPrintPreviews
-     */
-    public function testGetPrintPreviews(): void
-    {
-        $tm = new ThemeManager();
-        $preview = $tm->getPrintPreviews();
-        $this->assertStringContainsString('<div class="theme_preview"', $preview);
-        $this->assertStringContainsString('Original', $preview);
-        $this->assertStringContainsString('set_theme=original', $preview);
-        $this->assertStringContainsString('pmahomme', $preview);
-        $this->assertStringContainsString('set_theme=pmahomme', $preview);
     }
 }

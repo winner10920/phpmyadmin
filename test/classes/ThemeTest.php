@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PhpMyAdmin\Tests;
 
 use PhpMyAdmin\Theme;
+
 use function filemtime;
 
 class ThemeTest extends AbstractTestCase
@@ -21,14 +22,15 @@ class ThemeTest extends AbstractTestCase
      */
     protected function setUp(): void
     {
+        global $theme;
+
         parent::setUp();
-        parent::defineVersionConstants();
         parent::setTheme();
         $this->object = new Theme();
-        $this->backup = $GLOBALS['PMA_Theme'];
-        $GLOBALS['PMA_Theme'] = $this->object;
+        $this->backup = $theme;
+        $theme = $this->object;
         parent::setGlobalConfig();
-        $GLOBALS['PMA_Config']->enableBc();
+        $GLOBALS['config']->enableBc();
         $GLOBALS['text_dir'] = 'ltr';
         $GLOBALS['server'] = '99';
     }
@@ -39,8 +41,10 @@ class ThemeTest extends AbstractTestCase
      */
     protected function tearDown(): void
     {
+        global $theme;
+
         parent::tearDown();
-        $GLOBALS['PMA_Theme'] = $this->backup;
+        $theme = $this->backup;
     }
 
     /**
@@ -198,26 +202,6 @@ class ThemeTest extends AbstractTestCase
         $this->object->setImgPath('/new/path');
 
         $this->assertEquals('/new/path', $this->object->getImgPath());
-    }
-
-    /**
-     * Test for getPrintPreview().
-     */
-    public function testGetPrintPreview(): void
-    {
-        parent::setLanguage();
-        $this->assertStringContainsString(
-            '<h2>' . "\n" . '         (0.0.0.0)',
-            $this->object->getPrintPreview()
-        );
-        $this->assertStringContainsString(
-            'name="" href="index.php?route=/set-theme&amp;set_theme=&amp;server=99&amp;lang=en">',
-            $this->object->getPrintPreview()
-        );
-        $this->assertStringContainsString(
-            'No preview available.',
-            $this->object->getPrintPreview()
-        );
     }
 
     /**
